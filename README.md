@@ -7,7 +7,6 @@ This repository contains an implementation of CycleGAN for MRI image translation
 CycleGAN is used to perform image translation between different MRI modalities without requiring paired training data. This makes it particularly useful for medical imaging applications where paired data can be difficult or impossible to obtain.
 
 ## Project Structure 
-
 ```.
 ├── mri-cyclegan.ipynb # Main implementation notebook
 ├── cyclegan.ipynb # CycleGAN model architecture and training
@@ -30,7 +29,7 @@ CycleGAN is used to perform image translation between different MRI modalities w
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/your-username/mri-cyclegan.git
+git clone https://github.com/mahmoud-ekhani/mri-cyclegan.git
 cd mri-cyclegan
 ```
 
@@ -104,12 +103,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Your Name - your.email@example.com
+Mahmoud Ebrahimkhani - m.ebrahimkhani1993@gmail.com
 
-Project Link: [https://github.com/your-username/mri-cyclegan](https://github.com/your-username/mri-cyclegan)
+Project Link: [https://github.com/mahmoud-ekhani/mri-cyclegan](https://github.com/mahmoud-ekhani/mri-cyclegan)
 
 ## Acknowledgments
 
 - [CycleGAN Paper](https://arxiv.org/abs/1703.10593)
 - [PyTorch](https://pytorch.org/)
-- Any other resources or individuals you'd like to acknowledge
