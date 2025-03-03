@@ -4,6 +4,11 @@ import torch.nn.functional as F
 import numpy as np
 
 class TimeEmbedding(nn.Module):
+    """Time embedding module that projects timesteps into a higher dimensional space.
+    
+    Args:
+        n_channels (int): Number of channels in the embedding
+    """
     def __init__(self, n_channels):
         super().__init__()
         self.n_channels = n_channels
@@ -14,11 +19,26 @@ class TimeEmbedding(nn.Module):
         )
 
     def forward(self, t):
+        """Projects timesteps into the embedding space.
+        
+        Args:
+            t (torch.Tensor): Batch of timesteps [batch_size]
+            
+        Returns:
+            torch.Tensor: Time embeddings [batch_size, n_channels]
+        """
         # t: (batch_size,)
         t = t.unsqueeze(-1).float()
         return self.time_proj(t)
 
 class ConvBlock(nn.Module):
+    """Convolutional block with time conditioning and residual connections.
+    
+    Args:
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        time_channels (int): Number of channels in time embedding
+    """
     def __init__(self, in_channels, out_channels, time_channels):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
@@ -33,6 +53,15 @@ class ConvBlock(nn.Module):
             self.residual_conv = nn.Conv2d(in_channels, out_channels, 1)
 
     def forward(self, x, t):
+        """Forward pass of the conv block.
+        
+        Args:
+            x (torch.Tensor): Input feature maps [B, C, H, W]
+            t (torch.Tensor): Time embeddings [B, time_channels]
+            
+        Returns:
+            torch.Tensor: Processed feature maps [B, out_channels, H, W]
+        """
         residual = x if self.use_residual else self.residual_conv(x)
         
         h = self.conv1(x)
@@ -46,6 +75,11 @@ class ConvBlock(nn.Module):
         return h + residual
 
 class SelfAttention(nn.Module):
+    """Self-attention module for capturing long-range dependencies.
+    
+    Args:
+        channels (int): Number of input/output channels
+    """
     def __init__(self, channels):
         super().__init__()
         self.channels = channels
@@ -59,6 +93,14 @@ class SelfAttention(nn.Module):
         )
 
     def forward(self, x):
+        """Apply self-attention to input features.
+        
+        Args:
+            x (torch.Tensor): Input feature maps [B, C, H, W]
+            
+        Returns:
+            torch.Tensor: Self-attended feature maps [B, C, H, W]
+        """
         size = x.shape[-2:]
         x = x.flatten(2).transpose(1, 2)
         x = self.ln(x)
@@ -68,6 +110,11 @@ class SelfAttention(nn.Module):
         return attention_value.transpose(1, 2).view(-1, self.channels, *size)
 
 class CrossAttention(nn.Module):
+    """Cross-attention module for attending between source and target features.
+    
+    Args:
+        channels (int): Number of input/output channels
+    """
     def __init__(self, channels):
         super().__init__()
         self.channels = channels
@@ -81,6 +128,15 @@ class CrossAttention(nn.Module):
         )
 
     def forward(self, x, context):
+        """Apply cross-attention between input and context features.
+        
+        Args:
+            x (torch.Tensor): Query feature maps [B, C, H, W]
+            context (torch.Tensor): Key/Value feature maps [B, C, H, W]
+            
+        Returns:
+            torch.Tensor: Cross-attended feature maps [B, C, H, W]
+        """
         size = x.shape[-2:]
         x = x.flatten(2).transpose(1, 2)
         context = context.flatten(2).transpose(1, 2)
@@ -91,6 +147,13 @@ class CrossAttention(nn.Module):
         return attention_value.transpose(1, 2).view(-1, self.channels, *size)
 
 class UNet(nn.Module):
+    """U-Net architecture with attention and time conditioning for diffusion models.
+    
+    Args:
+        in_channels (int): Number of input channels (default: 3)
+        time_channels (int): Dimension of time embedding (default: 256)
+        n_channels (int): Base number of channels (default: 64)
+    """
     def __init__(self, in_channels=3, time_channels=256, n_channels=64):
         """
         Args:
@@ -148,12 +211,16 @@ class UNet(nn.Module):
         self.outc = nn.Conv2d(n_channels, 1, 1)
 
     def forward(self, x, t, condition=None, context=None):
-        """
+        """Forward pass of the U-Net.
+        
         Args:
-            x: Input tensor [B, C, H, W] containing source image + noise
-            t: Timesteps [B]
-            condition: Optional conditioning flag (e.g., 0 for T1→T2, 1 for T2→T1)
-            context: Optional context image for cross-attention (paired T1/T2 image)
+            x (torch.Tensor): Input tensor [B, C, H, W] containing source image + noise
+            t (torch.Tensor): Timesteps [B]
+            condition (torch.Tensor, optional): Conditioning flag (e.g., 0 for T1→T2, 1 for T2→T1)
+            context (torch.Tensor, optional): Context image for cross-attention (paired T1/T2 image)
+            
+        Returns:
+            torch.Tensor: Predicted noise or image delta [B, 1, H, W]
         """
         # Add conditioning information
         if condition is not None:
